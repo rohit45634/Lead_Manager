@@ -27,6 +27,10 @@ app.use("/api/leads", router);
 //Database connection
 connectDB();
 
+app.get("/", (req, res) => {
+  res.send("Lead Manager API is running successfully!");
+});
+
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
