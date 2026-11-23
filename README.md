@@ -184,10 +184,8 @@ JWT_SECRET=your_secret_key
 
 ## 🌐 Live Demo
 
-**Live Application:** [Lead Manager – View Live Website](YOUR_VERCEL_FRONTEND_URL)
-## 👨‍💻 Author
+**Live Application:** [Lead Manager – View Live Website](https://lead-manager-bice.vercel.app/)
 
-**Rohit**
 
 Full Stack Developer | MERN Stack
 
