@@ -11,7 +11,7 @@ const app = express();
 
 app.use(
   cors({
-    origin: "https://lead-manager-puc0lb3uf-rohit-s-projects45.vercel.app/",
+    origin: "https://lead-manager-bice.vercel.app/",
     credentials: true,
   }),
 );
