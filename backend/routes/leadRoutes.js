@@ -5,8 +5,12 @@ import {
   getAllLeads,
   updateLead,
 } from "../controllers/leadController.js";
+import authMiddleware from "../middleware/authMiddleware.js";
 
 const router = express.Router();
+
+// Protect all routes below
+router.use(authMiddleware);
 
 // POST - Create a new lead
 router.post("/", createLead);

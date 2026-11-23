@@ -4,7 +4,6 @@ import mongoose from "mongoose";
 // Add a new lead
 export const createLead = async (req, res) => {
   try {
-    // Get lead data from request body
     const { name, email, phone, company, source, status } = req.body;
 
     // Check required fields
@@ -15,7 +14,20 @@ export const createLead = async (req, res) => {
       });
     }
 
-    // Save lead in MongoDB
+    // Check duplicate email or phone for this user
+    const existingLead = await Lead.findOne({
+      user: req.user._id,
+      $or: [{ email }, { phone }],
+    });
+
+    if (existingLead) {
+      return res.status(409).json({
+        success: false,
+        message: "Lead with this email or phone already exists",
+      });
+    }
+
+    // Save lead with logged-in user ID
     const newLead = await Lead.create({
       name,
       email,
@@ -23,9 +35,9 @@ export const createLead = async (req, res) => {
       company,
       source,
       status,
+      user: req.user._id,
     });
 
-    // Send success response
     res.status(201).json({
       success: true,
       message: "Lead created successfully",
@@ -44,7 +56,9 @@ export const getAllLeads = async (req, res) => {
   try {
     const { search, status } = req.query;
 
-    let filter = {};
+    let filter = {
+      user: req.user._id,
+    };
 
     // Search leads by name
     if (search) {
@@ -79,7 +93,6 @@ export const updateLead = async (req, res) => {
   try {
     const { name, email, phone, company, source, status } = req.body;
 
-    // Check required fields
     if (!name || !email || !phone || !company || !source) {
       return res.status(400).json({
         success: false,
@@ -87,9 +100,26 @@ export const updateLead = async (req, res) => {
       });
     }
 
-    // Find lead by ID and update it
-    const updatedLead = await Lead.findByIdAndUpdate(
-      req.params.id,
+    // Check duplicate email or phone for this user
+    const existingLead = await Lead.findOne({
+      _id: { $ne: req.params.id },
+      user: req.user._id,
+      $or: [{ email }, { phone }],
+    });
+
+    if (existingLead) {
+      return res.status(409).json({
+        success: false,
+        message: "Another lead with this email or phone already exists",
+      });
+    }
+
+    // Find and update only the logged-in user's lead
+    const updatedLead = await Lead.findOneAndUpdate(
+      {
+        _id: req.params.id,
+        user: req.user._id,
+      },
       { name, email, phone, company, source, status },
       {
         new: true,
@@ -97,7 +127,6 @@ export const updateLead = async (req, res) => {
       },
     );
 
-    // Check whether lead exists
     if (!updatedLead) {
       return res.status(404).json({
         success: false,
@@ -105,7 +134,6 @@ export const updateLead = async (req, res) => {
       });
     }
 
-    // Send updated lead
     res.status(200).json({
       success: true,
       message: "Lead updated successfully",
@@ -132,10 +160,12 @@ export const deleteLead = async (req, res) => {
       });
     }
 
-    // Find and delete lead
-    const deletedLead = await Lead.findByIdAndDelete(id);
+    // Delete only the logged-in user's lead
+    const deletedLead = await Lead.findOneAndDelete({
+      _id: id,
+      user: req.user._id,
+    });
 
-    // Check whether lead exists
     if (!deletedLead) {
       return res.status(404).json({
         success: false,
@@ -143,7 +173,6 @@ export const deleteLead = async (req, res) => {
       });
     }
 
-    // Send success response
     res.status(200).json({
       success: true,
       message: "Lead deleted successfully",

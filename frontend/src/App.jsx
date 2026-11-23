@@ -1,13 +1,24 @@
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import { useState, useEffect } from "react";
-import { getLeads, createLead, updateLead, deleteLead } from "./api/leadApi";
+import { getLeads, createLead, updateLead, deleteLead } from "./api/leadApi.js";
+import { AuthProvider, useAuth } from "./context/AuthContext";
+import {Signup} from "./pages/Signup";
+import Login from "./pages/Login";
+import ProtectedRoute from "./components/ProtectedRoute";
+import { Route, Routes ,Navigate, useNavigate} from "react-router-dom";
 
-function App() {
+function Dashboard() {
   const [leads, setLeads] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editId, setEditId] = useState(null);
     // Search and Filter states
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const navigate = useNavigate();
+    const { logout } = useAuth();
+
+
   
   const handleEdit = (lead) => {
   setEditId(lead._id);
@@ -33,12 +44,13 @@ const handleDelete = async (id) => {
   try {
     await deleteLead(id);
 
-    alert("Lead deleted successfully!");
+    toast.success("Lead deleted successfully!");
 
-    await fetchLeads();
-
+    fetchLeads();
   } catch (error) {
-    alert(error.response?.data?.message || "Failed to delete lead");
+    toast.error(
+      error.response?.data?.message || "Failed to delete lead"
+    );
   }
 };
   const [formData, setFormData] = useState({
@@ -54,21 +66,27 @@ const fetchLeads = async () => {
   try {
     const response = await getLeads({
       search: search,
-      status: statusFilter
+      status: statusFilter,
     });
 
     setLeads(response.data.data);
-
   } catch (error) {
-    console.log(error);
-  } finally {
+  console.log("Fetch leads error:", error.response?.data || error.message);
+  toast.error(
+    error.response?.data?.message || "Failed to fetch leads"
+  );
+} finally {
     setLoading(false);
   }
 };
 
-  useEffect(() => {
+useEffect(() => {
+  const timer = setTimeout(() => {
     fetchLeads();
-  }, []);
+  }, 200);
+
+  return () => clearTimeout(timer);
+}, [search, statusFilter]);
 
   // Handle input changes
   const handleChange = (e) => {
@@ -81,16 +99,21 @@ const fetchLeads = async () => {
   };
 
   // Submit new lead
- const handleSubmit = async (e) => {
+const handleSubmit = async (e) => {
   e.preventDefault();
+
+  if (!/^\d{10}$/.test(formData.phone)) {
+    toast.error("Please enter a valid 10-digit phone number");
+    return;
+  }
 
   try {
     if (editId) {
       await updateLead(editId, formData);
-      alert("Lead updated successfully!");
+      toast.success("Lead updated successfully!");
     } else {
       await createLead(formData);
-      alert("Lead added successfully!");
+      toast.success("Lead added successfully!");
     }
 
     setFormData({
@@ -99,26 +122,36 @@ const fetchLeads = async () => {
       phone: "",
       company: "",
       source: "",
-      status: "New"
+      status: "New",
     });
 
     setEditId(null);
     fetchLeads();
 
   } catch (error) {
-  console.error("UPDATE ERROR:", error);
-
-  console.log("Response:", error.response);
-  console.log("Error data:", error.response?.data);
-
-  alert(
-    error.response?.data?.message || error.message
-  );
-}
+    toast.error(
+      error.response?.data?.message || "Something went wrong"
+    );
+  }
 };
-
- 
+const STATUS_COLORS = {
+  New: "bg-primary",
+  Contacted: "bg-warning text-dark",
+  Qualified: "bg-success",
+  Lost: "bg-secondary",
+};
+ const handleLogout = async () => {
+  try {
+    await logout();
+    toast.success("Logged out successfully!");
+    navigate("/login");
+  } catch (error) {
+    toast.error("Logout failed");
+  }
+};
 return (
+  
+  
   <div className="container-fluid bg-light min-vh-100 py-4">
     <div className="container">
 
@@ -132,6 +165,12 @@ return (
         <span className="badge bg-primary fs-6 p-2">
           Total Leads: {leads.length}
         </span>
+        <button
+  className="btn btn-danger"
+  onClick={handleLogout}
+>
+  Logout
+</button>
       </div>
 
       {/* Add / Edit Lead Form */}
@@ -172,14 +211,20 @@ return (
 
               <div className="col-12 col-md-6 col-lg-4">
                 <input
-                  className="form-control"
-                  type="tel"
-                  name="phone"
-                  placeholder="Enter Phone"
-                  value={formData.phone}
-                  onChange={handleChange}
-                  required
-                />
+  type="tel"
+  name="phone"
+  value={formData.phone}
+  onChange={(e) => {
+    const value = e.target.value;
+
+    if (/^\d{0,10}$/.test(value)) {
+      handleChange(e);
+    }
+  }}
+  maxLength={10}
+  placeholder="Enter 10-digit phone number"
+  className="form-control"
+/>
               </div>
 
               <div className="col-12 col-md-6 col-lg-4">
@@ -264,35 +309,31 @@ return (
           <div className="row g-3">
             <div className="col-12 col-md-6">
               <input
-                className="form-control"
-                type="text"
-                placeholder="Search by name..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
+  type="text"
+  className="form-control"
+  placeholder="Search leads by name..."
+  value={search}
+  onChange={(e) => setSearch(e.target.value)}
+/>
+
             </div>
 
             <div className="col-12 col-md-4">
               <select
-                className="form-select"
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-              >
-                <option value="">All Status</option>
-                <option value="New">New</option>
-                <option value="Contacted">Contacted</option>
-                <option value="Qualified">Qualified</option>
-                <option value="Lost">Lost</option>
-              </select>
+  className="form-select"
+  value={statusFilter}
+  onChange={(e) => setStatusFilter(e.target.value)}
+>
+  <option value="">All Status</option>
+  <option value="New">New</option>
+  <option value="Contacted">Contacted</option>
+  <option value="Qualified">Qualified</option>
+  <option value="Lost">Lost</option>
+</select>
             </div>
 
             <div className="col-12 col-md-2">
-              <button
-                className="btn btn-primary w-100"
-                onClick={fetchLeads}
-              >
-                Search
-              </button>
+            
             </div>
           </div>
         </div>
@@ -330,11 +371,11 @@ return (
                       <td>{lead.phone}</td>
                       <td>{lead.company}</td>
                       <td>{lead.source}</td>
-                      <td>
-                        <span className="badge bg-info text-dark">
-                          {lead.status}
-                        </span>
-                      </td>
+                     <td>
+  <span className={`badge ${STATUS_COLORS[lead.status] || "bg-secondary"}`}>
+    {lead.status}
+  </span>
+</td>
                       <td>
                         <div className="d-flex gap-2">
                           <button
@@ -368,9 +409,48 @@ return (
       </div>
 
     </div>
+
   </div>
 );
 
 }
+
+// New App component
+function App() {
+  return (
+    <AuthProvider>
+      <Routes>
+
+        <Route
+          path="/"
+          element={<Navigate to="/login" replace />}
+        />
+
+        <Route
+          path="/signup"
+          element={<Signup />}
+        />
+
+        <Route
+          path="/login"
+          element={<Login />}
+        />
+
+        <Route element={<ProtectedRoute />}>
+          <Route
+            path="/dashboard"
+            element={<Dashboard />}
+          />
+        </Route>
+
+      </Routes>
+            <ToastContainer position="top-right" autoClose={3000} />
+
+    </AuthProvider>
+  );
+}
+
+
+
 
 export default App;
