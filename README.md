@@ -112,12 +112,6 @@ cd frontend
 npm install
 ```
 
-Create a `.env` file inside the frontend folder:
-
-```env
-VITE_API_URL=http://localhost:5000/api
-```
-
 Start the frontend:
 
 ```bash
@@ -188,24 +182,9 @@ MONGO_URI=your_mongodb_atlas_connection_string
 JWT_SECRET=your_secret_key
 ```
 
-**Frontend (Vercel):**
+## 🌐 Live Demo
 
-```env
-VITE_API_URL=https://your-backend-url.onrender.com/api
-```
-
-Configure backend CORS to allow your deployed frontend domain and credentials. For cross-site cookie authentication, use Secure and HttpOnly cookies with SameSite=None and configure appropriate CSRF protection.
-
-Never commit `.env` files or private credentials to GitHub.
-
-## 📌 Future Improvements
-
-- Pagination
-- Lead sorting
-- Dashboard analytics
-- Export leads to CSV
-- Role-based access control
-
+**Live Application:** [Lead Manager – View Live Website](YOUR_VERCEL_FRONTEND_URL)
 ## 👨‍💻 Author
 
 **Rohit**
