@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_URL = "http://localhost:5000/api/auth";
+const API_URL = "https://lead-manager-api-3f7i.onrender.com/auth";
 
 // Signup API
 export const signupUser = async (userData) => {
