@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const API = axios.create({
-  baseURL: "http://localhost:5000/api",
+  baseURL: "https://lead-manager-api-3f7i.onrender.com/api",
   withCredentials: true,
 });
 
